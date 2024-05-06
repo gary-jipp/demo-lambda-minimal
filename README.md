@@ -7,13 +7,67 @@ Minimal single Lambda function delpoyment using GitHub Actions
 - Create lambda function `lambda-hello` in AWS Lambda
 - Create AWS API Gateway API `GET`Method to consume Lambda `lambda-hello` function on request
 
+## Deploy API & Function Manually
 
-# To run the Lambda function from CLI
+### Create a role that can manage and execute Lambda Functions
+```bash
+aws iam create-role \
+--role-name LambdaExecutionRole \
+--assume-role-policy-document file://lambda-trust-policy.json
+```
+
+### Run the Lambda function from CLI
 ```bash
 aws lambda invoke \
-  --function-name lambda-hello \
-  --payload file://_test/event.json \
-  --cli-binary-format raw-in-base64-out  \
-  --output json  out.json ; \
-  sed -e '1i -- Output --' -e '$a ------------' out.json ## show output to stdout
+--function-name lambda-hello \
+--payload file://_test/event.json \
+--cli-binary-format raw-in-base64-out  \
+--output json  out.json ; \
+sed -e '1i -- Output --' -e '$a ------------' out.json ## show output to stdout
+```
+
+### Create an API Gateway
+```bash
+aws apigateway create-rest-api \
+--name "" \
+--region ca-central-1 \
+--output json
+```
+
+### Create a Resource (New API Gateway will already have a "/" path by default)
+```bash
+aws apigateway create-resource \
+--rest-api-id <api-id> \
+--path-part "myresource" \
+--region <your-region> \
+--output json
+```
+
+### Add a Method for the Resource
+```bash
+aws apigateway put-method \
+--rest-api-id  <api-id> \
+--resource-id <resource-id> \
+--http-method GET \
+--authorization-type "NONE" \
+--region <your-region>
+```
+### Set a Lambda Integration to this method
+```bash
+aws apigateway put-integration \
+--rest-api-id <api-id> \
+--resource-id <resource-id> \
+--http-method GET \
+--type AWS \
+--integration-http-method POST \--uri arn:aws:apigateway:<region>:lambda:path/2015-03-31/functions/<lambda-arn>/invocations \
+--region <your-region> \
+--output json
+```
+
+### Deploy API
+```bash
+aws apigateway create-deployment  \
+--rest-api-id icim2g3a83  \
+--stage-name <stage-name> \
+--region <your-region> \
 ```
