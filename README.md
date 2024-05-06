@@ -12,8 +12,23 @@ Minimal single Lambda function delpoyment using GitHub Actions
 ### Create a role that can manage and execute Lambda Functions
 ```bash
 aws iam create-role \
---role-name LambdaExecutionRole \
---assume-role-policy-document file://lambda-trust-policy.json
+--role-name <role-name> \
+--assume-role-policy-document file://lambda-role.json
+```
+### Attach the AWSLambdaRole managed policy to the role
+```bash
+aws iam attach-role-policy  \
+--role-name <role-name>  \
+--policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+```
+or
+
+### Add Invoke policy to the role (from file)
+```bash
+aws iam put-role-policy \
+--role-name <role-name> \
+--policy-name LambdaInvokePolicy \
+--policy-document file://invoke-policy.json
 ```
 
 ### Run the Lambda function from CLI
@@ -52,14 +67,16 @@ aws apigateway put-method \
 --authorization-type "NONE" \
 --region <your-region>
 ```
-### Set a Lambda Integration to this method
+
+### Set a Lambda Integration to this method (using proxy integration)
 ```bash
 aws apigateway put-integration \
---rest-api-id <api-id> \
+--rest-api-id <rest-api-id> \
 --resource-id <resource-id> \
 --http-method GET \
---type AWS \
---integration-http-method POST \--uri arn:aws:apigateway:<region>:lambda:path/2015-03-31/functions/<lambda-arn>/invocations \
+--type AWS_PROXY \
+--integration-http-method POST \
+--uri arn:aws:apigateway:<region>:lambda:path/2015-03-31/functions/<lambda-arn>/invocations \
 --region <your-region> \
 --output json
 ```
@@ -69,5 +86,5 @@ aws apigateway put-integration \
 aws apigateway create-deployment  \
 --rest-api-id icim2g3a83  \
 --stage-name <stage-name> \
---region <your-region> \
+--region <your-region>
 ```
